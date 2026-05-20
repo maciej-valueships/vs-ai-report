@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.DS_Store
+.vercel
+.env
+.env.*
+node_modules/
+
+# Draft / duplicate research inputs (not needed to build or host)
+*.pplx.md
+* (1).md
+* (2).md

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liebig's law of the minimum — interactive | Valueships</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --vs-pink: #FF005E;
+  --vs-pink-20: #FFD1E0;
+  --vs-pink-5: #FFF0F5;
+  --vs-blue: #0F155B;
+  --vs-blue-20: #DEDFF5;
+  --vs-black: #080808;
+  --vs-ink-soft: #5A5A5C;
+  --vs-line: #E8E8EC;
+  --vs-white: #FFFFFF;
+  --vs-font-display: 'Lato', system-ui, sans-serif;
+  --vs-font-body: 'Roboto', system-ui, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: var(--vs-font-body); font-size: 15px; line-height: 1.5; color: var(--vs-black); background: var(--vs-white); }
+.wrap { max-width: 800px; margin: 0 auto; padding: 16px 16px 24px; }
+.hdr { border-left: 4px solid var(--vs-pink); padding-left: 14px; margin-bottom: 12px; }
+.hdr h1 { font-family: var(--vs-font-display); font-weight: 700; font-size: 20px; margin: 0 0 4px; }
+.hdr p { margin: 0; color: var(--vs-ink-soft); font-size: 13px; }
+.mode-toggle { display: inline-flex; margin-bottom: 14px; padding: 3px; background: var(--vs-line); border-radius: 999px; }
+.mode-toggle button {
+  font-family: var(--vs-font-display); font-weight: 700; font-size: 11px;
+  padding: 8px 14px; border: none; border-radius: 999px; background: transparent;
+  color: var(--vs-ink-soft); cursor: pointer;
+}
+.mode-toggle button[aria-pressed="true"] { background: var(--vs-pink); color: var(--vs-white); }
+.panel { background: var(--vs-pink-5); border: 1px solid var(--vs-pink-20); border-radius: 12px; padding: 16px; }
+.chart-stage {
+  background: var(--vs-white);
+  border: 1px solid var(--vs-line);
+  border-radius: 10px;
+  padding: 12px 8px 4px;
+  margin-bottom: 12px;
+  user-select: none;
+}
+.chart-hint {
+  text-align: center; font-size: 12px; color: var(--vs-ink-soft); margin: 0 0 8px;
+  font-family: var(--vs-font-display); font-weight: 700;
+}
+.chart-stage svg { display: block; width: 100%; height: auto; }
+.bar-hit { cursor: pointer; }
+.bar-hit:hover rect.bar-fill { filter: brightness(1.06); }
+.bar-hit.is-limiting rect.bar-fill { stroke: var(--vs-pink); stroke-width: 3; }
+.bar-hit.is-pulse rect.bar-fill { animation: barPulse .35s ease; }
+@keyframes barPulse {
+  40% { transform: scaleY(1.04); transform-origin: center bottom; }
+}
+.float-tip {
+  position: absolute; pointer-events: none;
+  font-family: var(--vs-font-display); font-weight: 900; font-size: 14px; color: var(--vs-pink);
+  opacity: 0; transform: translate(-50%, -8px); transition: opacity .15s, transform .4s; z-index: 5;
+}
+.float-tip.show { opacity: 1; transform: translate(-50%, -26px); }
+.readout { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.readout__box { flex: 1; min-width: 140px; background: var(--vs-white); border-radius: 8px; padding: 10px 12px; border: 1px solid var(--vs-line); }
+.readout__box--limit { border-color: var(--vs-pink); border-width: 2px; background: var(--vs-pink-5); }
+.readout__label { font-family: var(--vs-font-display); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--vs-pink); margin: 0 0 2px; }
+.readout__value { font-family: var(--vs-font-display); font-weight: 700; font-size: 15px; margin: 0; }
+.readout__value--big { font-size: 24px; color: var(--vs-pink); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.presets button {
+  font-family: var(--vs-font-body); font-weight: 600; font-size: 12px;
+  padding: 7px 12px; border-radius: 999px; border: 1px solid var(--vs-line); background: var(--vs-white); cursor: pointer;
+}
+.presets button:hover { border-color: var(--vs-pink); color: var(--vs-pink); }
+.presets button.primary { background: var(--vs-pink); border-color: var(--vs-pink); color: var(--vs-white); }
+.msg { margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--vs-blue-20); border-left: 3px solid var(--vs-blue); min-height: 40px; }
+.msg--warn { background: var(--vs-pink-5); border-left-color: var(--vs-pink); }
+.how { margin-top: 14px; border-top: 1px solid var(--vs-pink-20); padding-top: 12px; }
+.how h2 { font-family: var(--vs-font-display); font-weight: 700; font-size: 15px; margin: 0 0 8px; color: var(--vs-blue); }
+.how ol { margin: 0; padding-left: 1.2rem; color: var(--vs-ink-soft); font-size: 13px; }
+.how li { margin-bottom: 6px; }
+.how[hidden] { display: none; }
+#yieldZone, #yieldLine { transition: y .35s ease, height .35s ease; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hdr">
+    <h1>Liebig's law of the minimum</h1>
+    <p id="hdrSub">Growth factors as bars — yield is capped by the shortest bar.</p>
+  </header>
+
+  <div class="mode-toggle" role="group" aria-label="View mode">
+    <button type="button" id="btnClassic" aria-pressed="true">Classic Liebig (farming)</button>
+    <button type="button" id="btnAi" aria-pressed="false">How it works with AI</button>
+  </div>
+
+  <div class="panel">
+    <p class="chart-hint" id="chartHint">Click any bar to raise that input · yield line = shortest bar</p>
+    <div class="chart-stage" id="chartStage" style="position:relative">
+      <div class="float-tip" id="floatTip" aria-hidden="true">+10</div>
+      <svg id="chart" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="chartTitle chartDesc">
+        <title id="chartTitle">Liebig minimum — bar chart</title>
+        <desc id="chartDesc">Bar heights show input levels. Yield line matches the shortest bar.</desc>
+        <defs>
+          <linearGradient id="yieldFill" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#0F155B" stop-opacity=".12"/>
+            <stop offset="100%" stop-color="#4DA8E8" stop-opacity=".35"/>
+          </linearGradient>
+        </defs>
+
+        <!-- y-axis labels -->
+        <text x="36" y="68" font-family="Roboto,sans-serif" font-size="10" fill="#5A5A5C" text-anchor="end">100%</text>
+        <text x="36" y="178" font-family="Roboto,sans-serif" font-size="10" fill="#5A5A5C" text-anchor="end">50%</text>
+        <text x="36" y="288" font-family="Roboto,sans-serif" font-size="10" fill="#5A5A5C" text-anchor="end">0%</text>
+
+        <!-- grid -->
+        <line x1="48" y1="62" x2="680" y2="62" stroke="#E8E8EC" stroke-width="1"/>
+        <line x1="48" y1="172" x2="680" y2="172" stroke="#E8E8EC" stroke-width="1"/>
+        <line x1="48" y1="282" x2="680" y2="282" stroke="#E8E8EC" stroke-width="1"/>
+
+        <!-- side labels (growth factors) -->
+        <text x="18" y="175" font-family="Lato,sans-serif" font-size="11" font-weight="700" fill="#5A5A5C"
+          transform="rotate(-90 18 175)" text-anchor="middle">Growth factors</text>
+        <text x="702" y="175" font-family="Lato,sans-serif" font-size="11" font-weight="700" fill="#5A5A5C"
+          transform="rotate(90 702 175)" text-anchor="middle">Growth factors</text>
+
+        <!-- yield zone (filled to min bar) -->
+        <rect id="yieldZone" x="48" y="200" width="632" height="82" fill="url(#yieldFill)"/>
+
+        <!-- bars -->
+        <g id="barsGroup"></g>
+
+        <!-- yield line -->
+        <line id="yieldLine" x1="48" y1="200" x2="680" y2="200" stroke="#FF005E" stroke-width="3"/>
+        <text id="yieldTag" x="52" y="194" font-family="Lato,sans-serif" font-size="12" font-weight="900" fill="#FF005E">YIELD</text>
+
+        <!-- baseline -->
+        <line x1="48" y1="282" x2="680" y2="282" stroke="#080808" stroke-width="2"/>
+      </svg>
+    </div>
+
+    <div class="readout">
+      <div class="readout__box readout__box--limit">
+        <p class="readout__label">Limiting factor</p>
+        <p class="readout__value" id="limitName">CO₂</p>
+      </div>
+      <div class="readout__box">
+        <p class="readout__label" id="yieldReadoutLabel">Yield level</p>
+        <p class="readout__value readout__value--big" id="yieldPct">32%</p>
+      </div>
+    </div>
+    <div class="presets" id="presets"></div>
+    <p id="scenarioMsg" class="msg" role="status"></p>
+  </div>
+
+  <section class="how" id="howClassic">
+    <h2>How this works (classic)</h2>
+    <ol>
+      <li>Each <strong>bar</strong> is a growth factor (nutrient, light, etc.).</li>
+      <li><strong>Yield</strong> (pink line) sits at the <strong>shortest bar</strong> — surplus elsewhere does not raise it.</li>
+      <li>Click a bar to add more of that input and see if yield moves.</li>
+    </ol>
+  </section>
+  <section class="how" id="howAi" hidden>
+    <h2>How it works with AI</h2>
+    <ol>
+      <li>Same logic for <strong>enterprise AI</strong>: firm-level value is capped by the scarcest input.</li>
+      <li>Most firms are long on compute and short on <strong>human review</strong>.</li>
+      <li>Only raising the shortest bar raises potential increase in value (the pink line).</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function () {
+  const CHART = { left: 48, right: 680, floor: 282, ceiling: 62, height: 220 };
+
+  const PALETTE = [
+    '#F5D547', '#7CB87C', '#6BB5E8', '#F08A3C', '#D4B896',
+    '#7AD4E8', '#E8C547', '#C9A0DC', '#A8D48A', '#C4A07A',
+    '#F0E050', '#6A9FD4', '#F0A898', '#B8B8C0',
+  ];
+
+  const MODES = {
+    classic: {
+      yieldTag: 'YIELD',
+      yieldReadoutLabel: 'Yield level',
+      chartHint: 'Click any bar to raise that input · yield line = shortest bar',
+      chartDesc: 'Bar heights show input levels. Yield line matches the shortest bar.',
+      hdr: 'Each bar is a nutrient — yield is capped by the shortest bar.',
+      defaultMsg: 'Click a tall bar: yield stays. Click the shortest (pink outline): yield rises.',
+      factors: [
+        { id: 'light', name: 'Light', value: 85, default: 85, color: '#F5D547' },
+        { id: 'co2', name: 'CO₂', value: 32, default: 32, color: '#F08A3C' },
+        { id: 'n', name: 'Nitrate', value: 70, default: 70, color: '#D4B896' },
+        { id: 'p', name: 'Phosphate', value: 55, default: 55, color: '#7AD4E8' },
+        { id: 'k', name: 'Potassium', value: 38, default: 38, color: '#7CB87C' },
+        { id: 'ca', name: 'Calcium', value: 42, default: 42, color: '#E8C547' },
+        { id: 'mg', name: 'Magnesium', value: 72, default: 72, color: '#C9A0DC' },
+        { id: 'fe', name: 'Iron', value: 48, default: 48, color: '#C4A07A' },
+        { id: 's', name: 'Sulphur', value: 58, default: 58, color: '#A8D48A' },
+      ],
+      presets: [
+        { label: 'Add nitrogen (surplus)', primary: false,
+          apply(f, g) { const b = g().value; f.find(x => x.id === 'n').value = Math.min(100, f.find(x => x.id === 'n').value + 25); return { warn: true, text: 'Nitrate raised — yield still ' + b + '%.' }; }},
+        { label: 'Fix limiting factor', primary: true,
+          apply(f, g) { const m = g(); m.value = Math.min(100, m.value + 28); return { warn: false, text: 'You raised ' + m.name + '. Yield line moved up.' }; }},
+        { label: 'Reset', primary: false,
+          apply(f) { f.forEach(x => { x.value = x.default; }); return { warn: false, text: MODES.classic.defaultMsg }; }},
+      ],
+    },
+    ai: {
+      yieldTag: 'Potential increase in value',
+      yieldReadoutLabel: 'Potential increase in value',
+      chartHint: 'Click any bar to raise that input · value line = shortest bar',
+      chartDesc: 'Bar heights show enterprise inputs. Potential increase in value matches the shortest bar.',
+      hdr: 'Each bar is an enterprise input — potential value is capped by the shortest bar.',
+      defaultMsg: 'More compute won\'t raise value if review is still the shortest bar.',
+      factors: [
+        { id: 'compute', name: 'Compute', value: 88, default: 88, color: '#6BB5E8' },
+        { id: 'data', name: 'Data', value: 72, default: 72, color: '#7CB87C' },
+        { id: 'integrate', name: 'Integration', value: 58, default: 58, color: '#D4B896' },
+        { id: 'human', name: 'Review', value: 35, default: 35, color: '#F08A3C' },
+        { id: 'gov', name: 'Governance', value: 42, default: 42, color: '#C9A0DC' },
+        { id: 'change', name: 'Change', value: 50, default: 50, color: '#F5D547' },
+      ],
+      presets: [
+        { label: 'Buy more GPUs', primary: false,
+          apply(f, g) { const b = g().value; f.find(x => x.id === 'compute').value = Math.min(100, f.find(x => x.id === 'compute').value + 25); return { warn: true, text: 'More compute — potential increase in value still ' + b + '%.' }; }},
+        { label: 'Invest in review', primary: true,
+          apply(f, g) { f.find(x => x.id === 'human').value = Math.min(100, f.find(x => x.id === 'human').value + 30); return { warn: false, text: 'Review raised. Value line moved up.' }; }},
+        { label: 'Reset', primary: false,
+          apply(f) { f.forEach(x => { x.value = x.default; }); return { warn: false, text: MODES.ai.defaultMsg }; }},
+      ],
+    },
+  };
+
+  let mode = 'classic';
+  let factors = MODES.classic.factors.map(f => ({ ...f }));
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function getMin() { return factors.reduce((a, b) => (a.value <= b.value ? a : b)); }
+  function valToY(v) { return CHART.floor - (v / 100) * CHART.height; }
+
+  function render() {
+    const min = getMin();
+    const yieldY = valToY(min.value);
+    const n = factors.length;
+    const gap = 6;
+    const totalW = CHART.right - CHART.left;
+    const barW = (totalW - gap * (n - 1)) / n;
+
+    $('yieldZone').setAttribute('y', yieldY);
+    $('yieldZone').setAttribute('height', CHART.floor - yieldY);
+    $('yieldLine').setAttribute('y1', yieldY);
+    $('yieldLine').setAttribute('y2', yieldY);
+    const yieldTag = $('yieldTag');
+    yieldTag.setAttribute('y', yieldY - 6);
+    yieldTag.textContent = MODES[mode].yieldTag;
+    yieldTag.setAttribute('font-size', mode === 'ai' ? '9' : '12');
+    yieldTag.setAttribute('x', mode === 'ai' ? '52' : '52');
+
+    $('limitName').textContent = min.name;
+    $('yieldPct').textContent = min.value + '%';
+
+    const g = $('barsGroup');
+    g.innerHTML = '';
+
+    factors.forEach((f, i) => {
+      const x = CHART.left + i * (barW + gap);
+      const yTop = valToY(f.value);
+      const h = CHART.floor - yTop;
+      const isMin = f.id === min.id;
+      const color = f.color || PALETTE[i % PALETTE.length];
+
+      const grp = document.createElementNS(NS, 'g');
+      grp.setAttribute('class', 'bar-hit' + (isMin ? ' is-limiting' : ''));
+      grp.setAttribute('data-id', f.id);
+      grp.setAttribute('tabindex', '0');
+      grp.setAttribute('role', 'button');
+      grp.setAttribute('aria-label', f.name + ', ' + f.value + ' percent. Click to increase.');
+
+      const fill = document.createElementNS(NS, 'rect');
+      fill.setAttribute('class', 'bar-fill');
+      fill.setAttribute('x', x);
+      fill.setAttribute('y', yTop);
+      fill.setAttribute('width', barW);
+      fill.setAttribute('height', h);
+      fill.setAttribute('rx', 3);
+      fill.setAttribute('fill', isMin ? '#FF337E' : color);
+      fill.setAttribute('stroke', '#080808');
+      fill.setAttribute('stroke-width', isMin ? 0 : 1.5);
+      fill.setAttribute('style', 'transform-box: fill-box; transform-origin: center bottom;');
+
+      const pct = document.createElementNS(NS, 'text');
+      pct.setAttribute('x', x + barW / 2);
+      pct.setAttribute('y', yTop - 6);
+      pct.setAttribute('text-anchor', 'middle');
+      pct.setAttribute('font-family', 'Roboto,sans-serif');
+      pct.setAttribute('font-size', '10');
+      pct.setAttribute('font-weight', '700');
+      pct.setAttribute('fill', isMin ? '#FF005E' : '#5A5A5C');
+      pct.textContent = f.value + '%';
+
+      const label = document.createElementNS(NS, 'text');
+      const midY = yTop + h / 2;
+      label.setAttribute('x', x + barW / 2);
+      label.setAttribute('y', midY);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('dominant-baseline', 'middle');
+      label.setAttribute('transform', 'rotate(-90 ' + (x + barW / 2) + ' ' + midY + ')');
+      label.setAttribute('font-family', 'Roboto,sans-serif');
+      label.setAttribute('font-size', Math.min(11, barW * 0.85));
+      label.setAttribute('font-weight', '700');
+      label.setAttribute('fill', '#080808');
+      label.setAttribute('pointer-events', 'none');
+      label.textContent = f.name;
+
+      const hit = document.createElementNS(NS, 'rect');
+      hit.setAttribute('x', x);
+      hit.setAttribute('y', CHART.ceiling);
+      hit.setAttribute('width', barW);
+      hit.setAttribute('height', CHART.floor - CHART.ceiling);
+      hit.setAttribute('fill', 'transparent');
+
+      grp.appendChild(fill);
+      grp.appendChild(pct);
+      grp.appendChild(label);
+      grp.appendChild(hit);
+      grp.addEventListener('click', () => onBarClick(f, grp));
+      grp.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onBarClick(f, grp); }
+      });
+      g.appendChild(grp);
+    });
+  }
+
+  function showFloat(x, y, text) {
+    const tip = $('floatTip');
+    const stage = $('chartStage');
+    const vb = $('chart').viewBox.baseVal;
+    const r = stage.getBoundingClientRect();
+    tip.textContent = text;
+    tip.style.left = (x * r.width / vb.width) + 'px';
+    tip.style.top = (y * r.height / vb.height) + 'px';
+    tip.classList.remove('show');
+    void tip.offsetWidth;
+    tip.classList.add('show');
+    clearTimeout(showFloat._t);
+    showFloat._t = setTimeout(() => tip.classList.remove('show'), 700);
+  }
+
+  function onBarClick(factor, grp) {
+    const before = getMin().value;
+    const wasLimiting = factor.id === getMin().id;
+    factor.value = Math.min(100, factor.value + 10);
+    grp.classList.add('is-pulse');
+    setTimeout(() => grp.classList.remove('is-pulse'), 400);
+    const bbox = grp.querySelector('.bar-fill').getBBox();
+    showFloat(bbox.x + bbox.width / 2, bbox.y, '+10');
+    render();
+    const after = getMin().value;
+    const valueLabel = mode === 'ai' ? 'Potential increase in value' : 'Yield';
+    if (after > before) {
+      $('scenarioMsg').textContent = valueLabel + ' rose — you raised the limiting factor (' + getMin().name + ').';
+      $('scenarioMsg').classList.remove('msg--warn');
+    } else if (!wasLimiting) {
+      $('scenarioMsg').textContent = factor.name + ' is not the shortest bar. ' + valueLabel + ' stays at ' + after + '%.';
+      $('scenarioMsg').classList.add('msg--warn');
+    }
+  }
+
+  function buildPresets() {
+    $('presets').innerHTML = '';
+    MODES[mode].presets.forEach(p => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = p.label;
+      if (p.primary) btn.classList.add('primary');
+      btn.addEventListener('click', () => {
+        const res = p.apply(factors, getMin);
+        render();
+        $('scenarioMsg').textContent = res.text;
+        $('scenarioMsg').classList.toggle('msg--warn', res.warn);
+      });
+      $('presets').appendChild(btn);
+    });
+  }
+
+  function setMode(next) {
+    mode = next;
+    const cfg = MODES[mode];
+    factors = cfg.factors.map(f => ({ ...f }));
+    $('hdrSub').textContent = cfg.hdr;
+    $('chartHint').textContent = cfg.chartHint;
+    $('yieldReadoutLabel').textContent = cfg.yieldReadoutLabel;
+    $('chartDesc').textContent = cfg.chartDesc;
+    $('btnClassic').setAttribute('aria-pressed', mode === 'classic');
+    $('btnAi').setAttribute('aria-pressed', mode === 'ai');
+    $('howClassic').hidden = mode !== 'classic';
+    $('howAi').hidden = mode !== 'ai';
+    $('scenarioMsg').textContent = cfg.defaultMsg;
+    $('scenarioMsg').classList.remove('msg--warn');
+    buildPresets();
+    render();
+  }
+
+  $('btnClassic').addEventListener('click', () => setMode('classic'));
+  $('btnAi').addEventListener('click', () => setMode('ai'));
+  buildPresets();
+  $('scenarioMsg').textContent = MODES.classic.defaultMsg;
+  render();
+})();
+</script>
+</body>
+</html>
