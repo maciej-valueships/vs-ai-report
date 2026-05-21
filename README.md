@@ -9,7 +9,7 @@ Valueships report: **What is the real economic value of AI?**
 ## Local preview
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r build-requirements.txt
 python3 build_branded_html.py
 python3 -m http.server 8080
 # open http://localhost:8080
@@ -18,5 +18,7 @@ python3 -m http.server 8080
 ## Deploy
 
 Push to GitHub, then connect the repo in Vercel (or run `npx vercel --prod` from this directory).
+
+**Vercel settings:** Framework Preset = Other; Build Command = `npm run build`; Output Directory = `.` (root). Do not use the Python runtime — this is a static HTML site.
 
 Chapter CTAs link to [Valueships contact](https://www.valueships.com/contact).

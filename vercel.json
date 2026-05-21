@@ -1,5 +1,6 @@
 {
-  "installCommand": "python3 -m pip install -r requirements.txt -q",
-  "buildCommand": "python3 build_branded_html.py",
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
   "outputDirectory": "."
 }
